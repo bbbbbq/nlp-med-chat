@@ -1,0 +1,19 @@
+
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.2
+    container_name: mysql_server
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      # Persist database files
+      - ./data:/var/lib/mysql
+      # Automatically executed on first container start
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
