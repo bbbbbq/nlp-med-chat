@@ -1,34 +1,49 @@
 <template>
   <div class="stats-container">
-    <!-- Summary Cards -->
-    <div class="summary-grid">
-      <div class="summary-card">
-        <h4>总医生数</h4>
-        <p>{{ totalDoctors }}</p>
-      </div>
-      <div class="summary-card">
-        <h4>总患者数</h4>
-        <p>{{ totalPatients }}</p>
-      </div>
-      <div class="summary-card">
-        <h4>总病例数</h4>
-        <p>{{ totalDiagnoses }}</p>
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>正在加载统计数据...</p>
     </div>
+    
+    <!-- Error State -->
+    <div v-else-if="error" class="error-container">
+      <p class="error-message">{{ error }}</p>
+      <button @click="fetchStatistics" class="retry-button">重试</button>
+    </div>
+    
+    <!-- Data Display -->
+    <div v-else>
+      <!-- Summary Cards -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h4>总医生数</h4>
+          <p>{{ totalDoctors }}</p>
+        </div>
+        <div class="summary-card">
+          <h4>总患者数</h4>
+          <p>{{ totalPatients }}</p>
+        </div>
+        <div class="summary-card">
+          <h4>总病例数</h4>
+          <p>{{ totalDiagnoses }}</p>
+        </div>
+      </div>
 
-    <!-- Charts -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>医生数量增长趋势</h3>
-        <v-chart class="chart" :option="doctorOptions" autoresize />
-      </div>
-      <div class="chart-card">
-        <h3>患者数量增长趋势</h3>
-        <v-chart class="chart" :option="patientOptions" autoresize />
-      </div>
-      <div class="chart-card">
-        <h3>每日病例生成趋势</h3>
-        <v-chart class="chart" :option="diagnosesOptions" autoresize />
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>医生数量增长趋势</h3>
+          <v-chart class="chart" :option="doctorOptions" autoresize />
+        </div>
+        <div class="chart-card">
+          <h3>患者数量增长趋势</h3>
+          <v-chart class="chart" :option="patientOptions" autoresize />
+        </div>
+        <div class="chart-card">
+          <h3>每日病例生成趋势</h3>
+          <v-chart class="chart" :option="diagnosesOptions" autoresize />
+        </div>
       </div>
     </div>
   </div>
@@ -56,7 +71,21 @@ const totalPatients = computed(() => patientData.value.reduce((sum, item) => sum
 const totalDiagnoses = computed(() => diagnosesData.value.reduce((sum, item) => sum + item.count, 0));
 
 const createChartOptions = (data, color) => {
-  const dates = data.map(item => new Date(item.date).toLocaleDateString());
+  if (!data || data.length === 0) {
+    return {
+      title: {
+        text: '暂无数据',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#999', fontSize: 16 }
+      }
+    };
+  }
+  
+  const dates = data.map(item => {
+    const date = new Date(item.date);
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  });
   const counts = data.map(item => item.count);
 
   return {
@@ -88,16 +117,33 @@ const doctorOptions = computed(() => createChartOptions(doctorData.value, { line
 const patientOptions = computed(() => createChartOptions(patientData.value, { line: '#91CC75', areaStart: 'rgba(145, 204, 117, 0.3)', areaEnd: 'rgba(145, 204, 117, 0)' }));
 const diagnosesOptions = computed(() => createChartOptions(diagnosesData.value, { line: '#FAC858', areaStart: 'rgba(250, 200, 88, 0.3)', areaEnd: 'rgba(250, 200, 88, 0)' }));
 
+const loading = ref(true);
+const error = ref(null);
+
 const fetchStatistics = async () => {
   try {
+    loading.value = true;
+    error.value = null;
+    
     const response = await axios.get('http://127.0.0.1:3000/statistics');
     if (response.data.success) {
-      doctorData.value = response.data.doctors;
-      patientData.value = response.data.patients;
-      diagnosesData.value = response.data.diagnoses;
+      doctorData.value = response.data.doctors || [];
+      patientData.value = response.data.patients || [];
+      diagnosesData.value = response.data.diagnoses || [];
+      
+      console.log('Statistics loaded:', {
+        doctors: doctorData.value.length,
+        patients: patientData.value.length,
+        diagnoses: diagnosesData.value.length
+      });
+    } else {
+      error.value = '获取统计数据失败';
     }
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
+  } catch (err) {
+    console.error('Error fetching statistics:', err);
+    error.value = '网络错误，无法获取统计数据';
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -108,6 +154,60 @@ onMounted(fetchStatistics);
 .stats-container {
   padding: 2rem;
   background-color: #f0f2f5;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #5470C6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+}
+
+.error-message {
+  color: #ff4d4f;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background: #5470C6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.retry-button:hover {
+  background: #4c63d2;
 }
 
 .summary-grid {

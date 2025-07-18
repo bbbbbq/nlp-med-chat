@@ -1,4 +1,4 @@
 #!/bin/bash
-rm -rf minio_data
-docker-compose down
-docker-compose up -d
+sudo rm -rf minio_data
+sudo docker-compose down
+sudo docker-compose up -d

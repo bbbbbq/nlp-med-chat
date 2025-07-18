@@ -64,10 +64,8 @@ Desktop.ini
 *.swp
 *.tmp
 
-llm
-
 minio/minio_data
-
+llm
 mysql/mysql_data
 
 
