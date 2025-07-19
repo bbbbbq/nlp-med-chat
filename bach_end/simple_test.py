@@ -53,7 +53,7 @@ def test_diagnosis_api():
     
     # 优化后的参数
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "lanyun",
         "messages": [
             {
                 "role": "user",
@@ -70,7 +70,7 @@ def test_diagnosis_api():
     
     print("🧪 测试优化后的诊断API参数...")
     print(f"📤 发送请求到: {url}")
-    print(f"🤖 使用模型: gpt-3.5-turbo")
+    print(f"🤖 使用模型:lanyun")
     print(f"🎛️ 参数: temperature=0.3, top_p=0.9, frequency_penalty=0.6")
     print("="*60)
     

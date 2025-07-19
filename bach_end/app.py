@@ -45,6 +45,9 @@ except ImportError:
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
 
+# 配置Flask以确保JSON响应中的中文字符不被转义
+app.config['JSON_AS_ASCII'] = False
+
 # 全局SymptomExtractor实例，避免重复初始化RAG系统
 print("🚀 正在初始化全局医疗AI系统...")
 global_extractor = None
